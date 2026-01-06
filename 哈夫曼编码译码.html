@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Huffman 编码/解码系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --primary: #667eea;
+            --primary-dark: #764ba2;
+            --success: #10b981;
+            --info: #3b82f6;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --gray-100: #f8f9fa;
+            --gray-200: #e9ecef;
+            --gray-300: #dee2e6;
+            --gray-600: #6c757d;
+            --gray-800: #343a40;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: var(--gray-800);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+            padding: 30px 20px;
+            border-radius: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+        
+        header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .panel {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+        
+        .panel-header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 20px;
+        }
+        
+        .panel-header h2 {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.5rem;
+        }
+        
+        .panel-body {
+            padding: 30px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--gray-800);
+        }
+        
+        textarea, input[type="text"] {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid var(--gray-300);
+            border-radius: 8px;
+            font-size: 1rem;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            resize: vertical;
+            transition: border-color 0.3s;
+        }
+        
+        textarea:focus, input[type="text"]:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+        
+        .btn-secondary {
+            background: var(--gray-300);
+            color: var(--gray-800);
+        }
+        
+        .btn-secondary:hover {
+            background: var(--gray-400);
+        }
+        
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+        
+        .btn-success:hover {
+            opacity: 0.9;
+        }
+        
+        .stats-panel {
+            grid-column: 1 / -1;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+        
+        .stat-card {
+            background: var(--gray-100);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--primary);
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            color: var(--gray-600);
+            font-size: 0.9rem;
+        }
+        
+        .result-box {
+            background: var(--gray-100);
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            white-space: pre-wrap;
+        }
+        
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid var(--info);
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        
+        .warning-box {
+            background: #fff3cd;
+            border-left: 4px solid var(--warning);
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        
+        .success-box {
+            background: #d1fae5;
+            border-left: 4px solid var(--success);
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        
+        .log-output {
+            background: #1e1e1e;
+            color: #f8f8f2;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            line-height: 1.5;
+        }
+        
+        .log-info { color: #569cd6; }
+        .log-step { color: #4ec9b0; }
+        .log-data { color: #9cdcfe; }
+        .log-char { color: #ce9178; }
+        .log-code { color: #dcdcaa; }
+        .log-success { color: #4fc1ff; }
+        .log-warning { color: #ffcc00; }
+        
+        .tab-nav {
+            display: flex;
+            border-bottom: 2px solid var(--gray-200);
+            margin-bottom: 20px;
+        }
+        
+        .tab-btn {
+            padding: 10px 20px;
+            background: none;
+            border: none;
+            font-size: 1rem;
+            cursor: pointer;
+            position: relative;
+            color: var(--gray-600);
+        }
+        
+        .tab-btn.active {
+            color: var(--primary);
+            font-weight: 600;
+        }
+        
+        .tab-btn.active:after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--primary);
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .code-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        .code-table th {
+            background: var(--gray-100);
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+        }
+        
+        .code-table td {
+            padding: 12px;
+            border-bottom: 1px solid var(--gray-200);
+        }
+        
+        .code-table tr:hover {
+            background: var(--gray-100);
+        }
+        
+        footer {
+            text-align: center;
+            color: white;
+            padding: 20px;
+            margin-top: 30px;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>✨ Huffman 编码/解码系统</h1>
+            <p>基于Python算法实现的在线版本，支持中英文字符</p>
+        </header>
+
+        <div class="main-content">
+            <!-- 编码面板 -->
+            <div class="panel">
+                <div class="panel-header">
+                    <h2><span>🔤</span> 编码文本</h2>
+                </div>
+                <div class="panel-body">
+                    <div class="form-group">
+                        <label for="inputText">输入要编码的文本（支持中文、英文、特殊字符）：</label>
+                        <textarea id="inputText" rows="6" placeholder="请输入文本，例如：Hello World! 你好，世界！"></textarea>
+                    </div>
+                    
+                    <div class="btn-group">
+                        <button class="btn btn-primary" onclick="encodeText()">
+                            <span>⚡</span> 开始编码
+                        </button>
+                        <button class="btn btn-secondary" onclick="clearInput()">
+                            <span>🗑️</span> 清空输入
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 解码面板 -->
+            <div class="panel">
+                <div class="panel-header">
+                    <h2><span>🔍</span> 解码文本</h2>
+                </div>
+                <div class="panel-body">
+                    <div class="form-group">
+                        <label for="encodedText">输入编码字符串（0和1组成）：</label>
+                        <textarea id="encodedText" rows="6" placeholder="请输入二进制编码字符串"></textarea>
+                    </div>
+                    
+                    <div class="info-box">
+                        💡 提示：可以使用左侧编码生成的编码字符串，或手动输入合法的Huffman编码
+                    </div>
+                    
+                    <div class="btn-group">
+                        <button class="btn btn-success" onclick="decodeText()">
+                            <span>🔄</span> 开始解码
+                        </button>
+                        <button class="btn btn-secondary" onclick="loadFromEncoded()">
+                            <span>📁</span> 使用编码结果
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 统计信息面板 -->
+            <div class="panel stats-panel">
+                <div class="panel-header">
+                    <h2><span>📊</span> 统计信息</h2>
+                </div>
+                <div class="panel-body">
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-value" id="charCount">0</div>
+                            <div class="stat-label">总字符数</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="uniqueChars">0</div>
+                            <div class="stat-label">不同字符数</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="encodedLength">0</div>
+                            <div class="stat-label">编码长度（位）</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="compressionRatio">0%</div>
+                            <div class="stat-label">压缩率</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 结果输出面板 -->
+            <div class="panel stats-panel">
+                <div class="panel-header">
+                    <h2><span>📄</span> 输出与日志</h2>
+                </div>
+                <div class="panel-body">
+                    <div class="tab-nav">
+                        <button class="tab-btn active" onclick="switchTab('logs')">处理日志</button>
+                        <button class="tab-btn" onclick="switchTab('codes')">编码表</button>
+                        <button class="tab-btn" onclick="switchTab('results')">结果对比</button>
+                    </div>
+                    
+                    <div id="logs-tab" class="tab-content active">
+                        <div class="log-output" id="logOutput">
+🎯 Huffman 编码/解码系统已就绪！
+💡 请在左侧输入文本进行编码，或在右侧输入编码进行解码。
+✨ 支持中文、英文、数字、特殊字符和空格。
+                        </div>
+                    </div>
+                    
+                    <div id="codes-tab" class="tab-content">
+                        <table class="code-table" id="codeTable">
+                            <thead>
+                                <tr>
+                                    <th>字符</th>
+                                    <th>编码</th>
+                                    <th>长度</th>
+                                </tr>
+                            </thead>
+                            <tbody id="codeTableBody">
+                                <tr>
+                                    <td colspan="3" style="text-align: center;">暂无编码表数据</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div id="results-tab" class="tab-content">
+                        <div class="form-group">
+                            <label>原始文本：</label>
+                            <div class="result-box" id="originalTextDisplay">暂无</div>
+                        </div>
+                        <div class="form-group">
+                            <label>编码结果：</label>
+                            <div class="result-box" id="encodedResultDisplay">暂无</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>Huffman 编码/解码系统 - Python算法实现版本</p>
+            <p>支持中文字符 | 文件持久化 | 完整编码统计</p>
+        </footer>
+    </div>
+
+    <script>
+        // Huffman节点类
+        class HuffmanNode {
+            constructor(char = null, freq = 0) {
+                this.char = char;  // 字符
+                this.freq = freq;  // 频率
+                this.left = null;  // 左子树
+                this.right = null; // 右子树
+            }
+            
+            isLeaf() {
+                return this.left === null && this.right === null;
+            }
+            
+            // 用于最小堆比较
+            valueOf() {
+                return this.freq;
+            }
+        }
+
+        // Huffman编码类
+        class HuffmanCoding {
+            constructor() {
+                this.root = null;
+                this.codes = new Map();        // 字符 -> 编码
+                this.reverseCodes = new Map(); // 编码 -> 字符
+            }
+            
+            // 构建频率字典
+            buildFrequencyDict(text) {
+                if (!text) {
+                    throw new Error("文本为空");
+                }
+                
+                const frequency = new Map();
+                for (const char of text) {
+                    frequency.set(char, (frequency.get(char) || 0) + 1);
+                }
+                return frequency;
+            }
+            
+            // 构建Huffman树（使用数组模拟最小堆）
+            buildHuffmanTree(frequency) {
+                const heap = [];
+                
+                // 创建初始叶子节点
+                for (const [char, freq] of frequency) {
+                    heap.push(new HuffmanNode(char, freq));
+                }
+                
+                // 按频率排序（模拟最小堆）
+                heap.sort((a, b) => a.freq - b.freq);
+                
+                // 构建Huffman树
+                while (heap.length > 1) {
+                    // 取出两个频率最小的节点
+                    const left = heap.shift();
+                    const right = heap.shift();
+                    
+                    // 创建新节点
+                    const merged = new HuffmanNode(null, left.freq + right.freq);
+                    merged.left = left;
+                    merged.right = right;
+                    
+                    // 插入回堆中并重新排序
+                    heap.push(merged);
+                    heap.sort((a, b) => a.freq - b.freq);
+                }
+                
+                this.root = heap[0] || null;
+                return this.root;
+            }
+            
+            // 生成编码（递归函数）
+            _generateCodesHelper(node, currentCode) {
+                if (node.isLeaf()) {
+                    if (currentCode === "") {
+                        currentCode = "0";
+                    }
+                    this.codes.set(node.char, currentCode);
+                    this.reverseCodes.set(currentCode, node.char);
+                    return;
+                }
+                
+                this._generateCodesHelper(node.left, currentCode + "0");
+                this._generateCodesHelper(node.right, currentCode + "1");
+            }
+            
+            generateCodes() {
+                if (this.root === null) {
+                    return;
+                }
+                
+                this.codes.clear();
+                this.reverseCodes.clear();
+                
+                if (this.root.isLeaf()) {
+                    this.codes.set(this.root.char, "0");
+                    this.reverseCodes.set("0", this.root.char);
+                } else {
+                    this._generateCodesHelper(this.root, "");
+                }
+            }
+            
+            // 编码文本
+            encodeText(text) {
+                if (!text) {
+                    return "";
+                }
+                
+                // 构建频率字典
+                const frequency = this.buildFrequencyDict(text);
+                
+                // 构建Huffman树
+                this.buildHuffmanTree(frequency);
+                
+                // 生成编码
+                this.generateCodes();
+                
+                // 编码文本
+                let encodedText = "";
+                for (const char of text) {
+                    encodedText += this.codes.get(char);
+                }
+                
+                return encodedText;
+            }
+            
+            // 解码文本
+            decodeText(encodedText) {
+                if (!encodedText || this.reverseCodes.size === 0) {
+                    throw new Error("编码表为空，无法解码");
+                }
+                
+                let decodedText = "";
+                let currentCode = "";
+                
+                for (const bit of encodedText) {
+                    currentCode += bit;
+                    if (this.reverseCodes.has(currentCode)) {
+                        decodedText += this.reverseCodes.get(currentCode);
+                        currentCode = "";
+                    }
+                }
+                
+                // 检查是否有未解码的剩余编码
+                if (currentCode) {
+                    console.warn(`未处理的编码: ${currentCode}`);
+                }
+                
+                return decodedText;
+            }
+            
+            // 获取编码表
+            getCodeTable() {
+                return Array.from(this.codes.entries()).sort((a, b) => a[1].length - b[1].length);
+            }
+        }
+
+        // 全局变量
+        let huffman = new HuffmanCoding();
+        let currentEncodedText = "";
+        let currentOriginalText = "";
+        let logMessages = [];
+
+        // 格式化字符显示
+        function formatCharDisplay(char) {
+            if (char === '\n') return '\\n (换行符)';
+            if (char === ' ') return '[空格]';
+            if (char === '\t') return '\\t (制表符)';
+            if (char === '\r') return '\\r (回车符)';
+            if (char.charCodeAt(0) < 32 || char.charCodeAt(0) > 126) {
+                return `${char} (U+${char.charCodeAt(0).toString(16).toUpperCase().padStart(4, '0')})`;
+            }
+            return char;
+        }
+
+        // 添加日志
+        function addLog(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const types = {
+                'info': 'log-info',
+                'step': 'log-step',
+                'data': 'log-data',
+                'char': 'log-char',
+                'code': 'log-code',
+                'success': 'log-success',
+                'warning': 'log-warning'
+            };
+            
+            const logEntry = `<span class="${types[type] || 'log-info'}">[${timestamp}] ${message}</span>`;
+            logMessages.push(logEntry);
+            
+            // 更新日志显示
+            const logOutput = document.getElementById('logOutput');
+            logOutput.innerHTML = logMessages.join('\n');
+            logOutput.scrollTop = logOutput.scrollHeight;
+        }
+
+        // 更新统计信息
+        function updateStats(originalText, encodedText) {
+            if (originalText) {
+                const charCount = originalText.length;
+                const uniqueChars = new Set(originalText).size;
+                const encodedLength = encodedText.length;
+                const originalBits = new TextEncoder().encode(originalText).length * 8;
+                
+                document.getElementById('charCount').textContent = charCount;
+                document.getElementById('uniqueChars').textContent = uniqueChars;
+                document.getElementById('encodedLength').textContent = encodedLength;
+                
+                if (originalBits > 0) {
+                    const compressionRatio = (encodedLength / originalBits * 100).toFixed(1);
+                    document.getElementById('compressionRatio').textContent = `${compressionRatio}%`;
+                }
+            }
+        }
+
+        // 更新编码表显示
+        function updateCodeTable() {
+            const codeTable = huffman.getCodeTable();
+            const tableBody = document.getElementById('codeTableBody');
+            
+            if (codeTable.length === 0) {
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="3" style="text-align: center;">暂无编码表数据</td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            let html = '';
+            codeTable.forEach(([char, code]) => {
+                const charDisplay = formatCharDisplay(char);
+                html += `
+                    <tr>
+                        <td>${charDisplay}</td>
+                        <td><strong>${code}</strong></td>
+                        <td>${code.length} 位</td>
+                    </tr>
+                `;
+            });
+            
+            tableBody.innerHTML = html;
+        }
+
+        // 编码文本函数
+        function encodeText() {
+            const inputText = document.getElementById('inputText').value.trim();
+            
+            if (!inputText) {
+                addLog("❌ 错误：输入文本不能为空！", 'warning');
+                return;
+            }
+            
+            try {
+                // 清空日志
+                logMessages = [];
+                addLog("🚀 开始编码过程...", 'step');
+                
+                // 步骤1: 构建频率字典
+                addLog("🎯 步骤1: 构建频率字典...", 'step');
+                const frequency = huffman.buildFrequencyDict(inputText);
+                addLog(`📊 字符频率统计 (共${frequency.size}个不同字符):`, 'data');
+                
+                // 显示频率统计
+                const sortedFreq = Array.from(frequency.entries())
+                    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+                
+                sortedFreq.slice(0, 10).forEach(([char, freq], index) => {
+                    const charDisplay = formatCharDisplay(char);
+                    addLog(`  🔸 '${charDisplay}': ${freq}次`, 'char');
+                });
+                
+                if (sortedFreq.length > 10) {
+                    addLog(`  ... 还有${sortedFreq.length - 10}个字符`, 'info');
+                }
+                
+                // 步骤2: 构建Huffman树
+                addLog(`\n🌳 步骤2: 构建Huffman树 (共${frequency.size}个叶子节点)...`, 'step');
+                huffman.buildHuffmanTree(frequency);
+                
+                // 步骤3: 生成编码
+                addLog("🔤 步骤3: 生成Huffman编码...", 'step');
+                huffman.generateCodes();
+                
+                // 显示编码表
+                addLog(`📋 生成的Huffman编码表 (共${huffman.codes.size}个字符):`, 'data');
+                const sortedCodes = Array.from(huffman.codes.entries())
+                    .sort((a, b) => a[1].length - b[1].length);
+                
+                sortedCodes.slice(0, 10).forEach(([char, code], index) => {
+                    const charDisplay = formatCharDisplay(char);
+                    addLog(`  ✅ '${charDisplay}': ${code} (长度: ${code.length}位)`, 'code');
+                });
+                
+                if (sortedCodes.length > 10) {
+                    addLog(`  ... 还有${sortedCodes.length - 10}个编码`, 'info');
+                }
+                
+                // 步骤4: 编码文本
+                addLog("\n⚡ 步骤4: 编码文本...", 'step');
+                currentEncodedText = "";
+                for (let i = 0; i < inputText.length; i++) {
+                    const char = inputText[i];
+                    const code = huffman.codes.get(char);
+                    currentEncodedText += code;
+                    
+                    if (i < 3) {  // 显示前3个字符的编码过程
+                        const charPreview = formatCharDisplay(char);
+                        addLog(`  🔹 字符 '${charPreview}' -> 编码: ${code}`, 'data');
+                    }
+                }
+                
+                if (inputText.length > 3) {
+                    addLog(`  ... 还有${inputText.length - 3}个字符`, 'info');
+                }
+                
+                // 更新结果
+                currentOriginalText = inputText;
+                document.getElementById('encodedText').value = currentEncodedText;
+                document.getElementById('originalTextDisplay').textContent = currentOriginalText;
+                document.getElementById('encodedResultDisplay').textContent = currentEncodedText;
+                
+                // 更新统计信息
+                updateStats(currentOriginalText, currentEncodedText);
+                
+                // 更新编码表
+                updateCodeTable();
+                
+                // 计算压缩率
+                const originalBytes = new TextEncoder().encode(currentOriginalText).length;
+                const originalBits = originalBytes * 8;
+                const encodedBits = currentEncodedText.length;
+                
+                if (originalBits > 0) {
+                    const compressionRatio = (encodedBits / originalBits * 100).toFixed(1);
+                    const bitsSaved = originalBits - encodedBits;
+                    
+                    addLog(`\n✅ 编码完成！`, 'success');
+                    addLog(`🔢 编码结果长度: ${encodedBits} 位`, 'data');
+                    addLog(`💾 原始大小: ${originalBits} bits (${originalBytes} 字节)`, 'data');
+                    addLog(`💿 压缩后: ${encodedBits} bits (${(encodedBits/8).toFixed(1)} 字节)`, 'data');
+                    addLog(`📉 压缩率: ${compressionRatio}%`, 'data');
+                    
+                    if (bitsSaved > 0) {
+                        addLog(`💰 节省空间: ${bitsSaved} bits (${(bitsSaved/8).toFixed(1)} 字节)`, 'success');
+                        addLog(`🎯 存储效率提高: ${(originalBits/encodedBits).toFixed(2)} 倍`, 'success');
+                    }
+                }
+                
+            } catch (error) {
+                addLog(`❌ 编码过程中发生错误: ${error.message}`, 'warning');
+            }
+        }
+
+        // 解码文本函数
+        function decodeText() {
+            const encodedText = document.getElementById('encodedText').value.trim();
+            
+            if (!encodedText) {
+                addLog("❌ 错误：编码字符串不能为空！", 'warning');
+                return;
+            }
+            
+            // 验证编码字符串
+            if (!/^[01]+$/.test(encodedText)) {
+                addLog("❌ 错误：编码字符串只能包含0和1！", 'warning');
+                return;
+            }
+            
+            try {
+                addLog("\n🔍 开始解码过程...", 'step');
+                addLog(`编码字符串长度: ${encodedText.length} 位`, 'data');
+                addLog(`编码字符串预览: ${encodedText.substring(0, 50)}${encodedText.length > 50 ? '...' : ''}`, 'data');
+                
+                // 解码文本
+                const decodedText = huffman.decodeText(encodedText);
+                
+                addLog("\n📄 解码结果:", 'data');
+                let preview = decodedText.substring(0, 10);
+                if (decodedText.length > 10) {
+                    preview += `...(共${decodedText.length}个字符)`;
+                }
+                addLog(`  ${preview}`, 'data');
+                
+                // 更新结果
+                document.getElementById('inputText').value = decodedText;
+                document.getElementById('originalTextDisplay').textContent = decodedText;
+                
+                addLog(`✅ 解码完成！共解码 ${decodedText.length} 个字符`, 'success');
+                
+                // 验证解码结果
+                if (currentOriginalText && decodedText === currentOriginalText) {
+                    addLog("🎉 完美！解码结果与原始文本完全一致！", 'success');
+                } else if (!currentOriginalText) {
+                    addLog("⚠️ 原始文本未知，已使用解码结果作为当前文本", 'info');
+                    currentOriginalText = decodedText;
+                } else {
+                    addLog("❌ 警告：解码结果与原始文本不一致！", 'warning');
+                    addLog("💡 已使用解码结果更新当前文本", 'info');
+                    currentOriginalText = decodedText;
+                }
+                
+            } catch (error) {
+                addLog(`❌ 解码过程中发生错误: ${error.message}`, 'warning');
+            }
+        }
+
+        // 清空输入
+        function clearInput() {
+            document.getElementById('inputText').value = '';
+            addLog("🗑️ 已清空输入文本", 'info');
+        }
+
+        // 使用编码结果填充
+        function loadFromEncoded() {
+            if (currentEncodedText) {
+                document.getElementById('encodedText').value = currentEncodedText;
+                addLog("📁 已加载之前的编码结果", 'info');
+            } else {
+                addLog("❌ 错误：没有可用的编码结果，请先进行编码", 'warning');
+            }
+        }
+
+        // 切换标签页
+        function switchTab(tabName) {
+            // 更新标签按钮状态
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // 显示对应内容
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(`${tabName}-tab`).classList.add('active');
+        }
+
+        // 页面加载时初始化
+        window.addEventListener('load', function() {
+            addLog("🎯 Huffman 编码/解码系统已初始化！", 'step');
+            addLog("💡 功能说明：", 'info');
+            addLog("  1. 在左侧输入文本，点击'开始编码'进行编码", 'info');
+            addLog("  2. 编码结果会自动显示在右侧输入框", 'info');
+            addLog("  3. 点击'开始解码'可以将编码转换回文本", 'info');
+            addLog("  4. 支持中英文字符、数字、特殊符号", 'info');
+            
+            // 设置示例文本
+            document.getElementById('inputText').value = "Hello World! 你好，世界！\n这是一个Huffman编码示例。";
+        });
+    </script>
+</body>
+</html>
