@@ -128,6 +128,7 @@
             display: flex;
             gap: 10px;
             margin-top: 20px;
+            flex-wrap: wrap;
         }
         
         .btn {
@@ -260,6 +261,7 @@
             display: flex;
             border-bottom: 2px solid var(--gray-200);
             margin-bottom: 20px;
+            flex-wrap: wrap;
         }
         
         .tab-btn {
@@ -317,6 +319,162 @@
             background: var(--gray-100);
         }
         
+        /* 模态框样式 */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .modal {
+            background: white;
+            border-radius: 20px;
+            padding: 40px 30px;
+            max-width: 450px;
+            width: 90%;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.3);
+            text-align: center;
+            animation: slideIn 0.4s ease;
+            transform-origin: center;
+        }
+        
+        @keyframes slideIn {
+            from { 
+                transform: scale(0.9) translateY(20px);
+                opacity: 0;
+            }
+            to { 
+                transform: scale(1) translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        .modal-header {
+            font-size: 2rem;
+            margin-bottom: 20px;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .modal-body {
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+            color: var(--gray-800);
+            min-height: 40px;
+        }
+        
+        .progress-container {
+            width: 100%;
+            background-color: #f3f3f3;
+            border-radius: 10px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+        
+        .progress-bar {
+            height: 20px;
+            background: linear-gradient(90deg, var(--primary), var(--primary-dark));
+            width: 0%;
+            border-radius: 10px;
+            transition: width 0.3s ease;
+            text-align: center;
+            line-height: 20px;
+            color: white;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+        
+        .processing-details {
+            font-size: 0.9rem;
+            color: var(--gray-600);
+            margin-top: 10px;
+            font-style: italic;
+        }
+        
+        .close-btn {
+            background: var(--gray-300);
+            color: var(--gray-800);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin-top: 20px;
+            transition: background 0.3s;
+        }
+        
+        .close-btn:hover {
+            background: var(--gray-400);
+        }
+        
+        .debug-info {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 0.9rem;
+            color: var(--gray-600);
+            margin-top: 10px;
+        }
+        
+        /* 解码结果样式 */
+        .decoded-result {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        
+        .decoded-result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .copy-btn {
+            background: var(--info);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .copy-btn:hover {
+            background: #2563eb;
+        }
+        
+        .copy-btn.success {
+            background: var(--success);
+        }
+        
         footer {
             text-align: center;
             color: white;
@@ -349,6 +507,9 @@
                         <button class="btn btn-primary" onclick="encodeText()">
                             <span>⚡</span> 开始编码
                         </button>
+                        <button class="btn btn-success" onclick="encodeAndDecode()">
+                            <span>🔄</span> 编码+译码
+                        </button>
                         <button class="btn btn-secondary" onclick="clearInput()">
                             <span>🗑️</span> 清空输入
                         </button>
@@ -372,12 +533,19 @@
                     </div>
                     
                     <div class="btn-group">
-                        <button class="btn btn-success" onclick="decodeText()">
+                        <button class="btn btn-success" onclick="showDecodeModal()">
                             <span>🔄</span> 开始解码
+                        </button>
+                        <button class="btn btn-primary" onclick="decodeFromInput()">
+                            <span>🔍</span> 直接译码
                         </button>
                         <button class="btn btn-secondary" onclick="loadFromEncoded()">
                             <span>📁</span> 使用编码结果
                         </button>
+                    </div>
+                    
+                    <div class="debug-info" id="debugInfo">
+                        状态: 就绪
                     </div>
                 </div>
             </div>
@@ -419,6 +587,7 @@
                         <button class="tab-btn active" onclick="switchTab('logs')">处理日志</button>
                         <button class="tab-btn" onclick="switchTab('codes')">编码表</button>
                         <button class="tab-btn" onclick="switchTab('results')">结果对比</button>
+                        <button class="tab-btn" onclick="switchTab('decoded')">解码结果</button>
                     </div>
                     
                     <div id="logs-tab" class="tab-content active">
@@ -456,6 +625,26 @@
                             <div class="result-box" id="encodedResultDisplay">暂无</div>
                         </div>
                     </div>
+                    
+                    <div id="decoded-tab" class="tab-content">
+                        <div class="form-group">
+                            <div class="decoded-result-header">
+                                <label>完整解码结果：</label>
+                                <button class="copy-btn" onclick="copyDecodedResult()">
+                                    <span>📋</span> 复制结果
+                                </button>
+                            </div>
+                            <div class="decoded-result" id="decodedResultDisplay">
+暂无解码结果。请先进行解码操作。
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>解码统计：</label>
+                            <div class="result-box" id="decodeStats">
+暂无解码统计信息。
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -464,6 +653,25 @@
             <p>Huffman 编码/解码系统 - Python算法实现版本</p>
             <p>支持中文字符 | 文件持久化 | 完整编码统计</p>
         </footer>
+    </div>
+
+    <!-- 解码加载模态框 -->
+    <div class="modal-overlay" id="decodeModal">
+        <div class="modal">
+            <div class="modal-header">
+                <span id="modalIcon">🔄</span>
+                <span id="modalTitle">解码中...</span>
+            </div>
+            <div class="modal-body" id="modalMessage">
+                正在处理您的解码请求，请稍候...
+            </div>
+            <div class="progress-container">
+                <div class="progress-bar" id="progressBar">0%</div>
+            </div>
+            <div class="processing-details" id="processingDetails">
+                初始化解码器...
+            </div>
+        </div>
     </div>
 
     <script>
@@ -588,26 +796,47 @@
                 // 编码文本
                 let encodedText = "";
                 for (const char of text) {
-                    encodedText += this.codes.get(char);
+                    const code = this.codes.get(char);
+                    if (!code) {
+                        throw new Error(`字符 '${char}' 没有编码`);
+                    }
+                    encodedText += code;
                 }
                 
                 return encodedText;
             }
             
-            // 解码文本
+            // 解码文本 - 修复的版本
             decodeText(encodedText) {
-                if (!encodedText || this.reverseCodes.size === 0) {
+                if (!encodedText) {
+                    throw new Error("编码字符串为空");
+                }
+                
+                if (this.reverseCodes.size === 0) {
                     throw new Error("编码表为空，无法解码");
                 }
                 
                 let decodedText = "";
                 let currentCode = "";
+                let processedBits = 0;
+                let charCount = 0;
+                let maxAttempts = encodedText.length;
+                let attempts = 0;
                 
                 for (const bit of encodedText) {
                     currentCode += bit;
+                    processedBits++;
+                    attempts++;
+                    
+                    // 防止无限循环
+                    if (attempts > maxAttempts * 2) {
+                        throw new Error("解码过程过长，可能编码不合法");
+                    }
+                    
                     if (this.reverseCodes.has(currentCode)) {
                         decodedText += this.reverseCodes.get(currentCode);
                         currentCode = "";
+                        charCount++;
                     }
                 }
                 
@@ -616,7 +845,33 @@
                     console.warn(`未处理的编码: ${currentCode}`);
                 }
                 
-                return decodedText;
+                return {
+                    text: decodedText,
+                    charCount: charCount,
+                    totalBits: encodedText.length,
+                    remainingCode: currentCode
+                };
+            }
+            
+            // 直接解码函数（不需要编码表，从编码字符串推断）
+            decodeDirect(encodedText) {
+                if (!encodedText) {
+                    return "";
+                }
+                
+                // 首先尝试从现有编码表解码
+                if (this.reverseCodes.size > 0) {
+                    try {
+                        const result = this.decodeText(encodedText);
+                        return result.text;
+                    } catch (error) {
+                        console.log("使用现有编码表解码失败，尝试重建...");
+                    }
+                }
+                
+                // 如果编码表为空，尝试重建
+                addLog("⚠️ 警告：编码表为空，尝试从编码字符串重建...", 'warning');
+                return "需要先进行编码操作生成编码表";
             }
             
             // 获取编码表
@@ -629,6 +884,7 @@
         let huffman = new HuffmanCoding();
         let currentEncodedText = "";
         let currentOriginalText = "";
+        let currentDecodedText = "";
         let logMessages = [];
 
         // 格式化字符显示
@@ -663,6 +919,12 @@
             const logOutput = document.getElementById('logOutput');
             logOutput.innerHTML = logMessages.join('\n');
             logOutput.scrollTop = logOutput.scrollHeight;
+        }
+
+        // 更新调试信息
+        function updateDebugInfo(message) {
+            const debugInfo = document.getElementById('debugInfo');
+            debugInfo.textContent = `状态: ${message}`;
         }
 
         // 更新统计信息
@@ -713,12 +975,338 @@
             tableBody.innerHTML = html;
         }
 
+        // 更新解码进度
+        function updateDecodeProgress(progress, message = "") {
+            const progressBar = document.getElementById('progressBar');
+            const modalMessage = document.getElementById('modalMessage');
+            const processingDetails = document.getElementById('processingDetails');
+            
+            if (progressBar) {
+                progressBar.style.width = `${progress}%`;
+                progressBar.textContent = `${progress}%`;
+            }
+            
+            if (modalMessage && message) {
+                modalMessage.textContent = message;
+            }
+            
+            if (processingDetails) {
+                if (progress < 30) {
+                    processingDetails.textContent = "准备阶段...";
+                } else if (progress < 60) {
+                    processingDetails.textContent = "正在处理...";
+                } else if (progress < 90) {
+                    processingDetails.textContent = "解码中...";
+                } else {
+                    processingDetails.textContent = "即将完成...";
+                }
+            }
+        }
+
+        // 显示解码模态框
+        function showDecodeModal() {
+            const encodedText = document.getElementById('encodedText').value.trim();
+            
+            if (!encodedText) {
+                addLog("❌ 错误：编码字符串不能为空！", 'warning');
+                updateDebugInfo("编码字符串为空");
+                return;
+            }
+            
+            // 验证编码字符串
+            if (!/^[01]+$/.test(encodedText)) {
+                addLog("❌ 错误：编码字符串只能包含0和1！", 'warning');
+                updateDebugInfo("编码格式错误");
+                return;
+            }
+            
+            // 检查编码表是否为空
+            if (huffman.reverseCodes.size === 0) {
+                addLog("❌ 错误：编码表为空，无法解码！", 'warning');
+                addLog("💡 提示：请先进行编码操作生成编码表", 'info');
+                updateDebugInfo("编码表为空");
+                return;
+            }
+            
+            // 显示模态框
+            const modal = document.getElementById('decodeModal');
+            modal.style.display = 'flex';
+            
+            // 重置进度条
+            updateDecodeProgress(0, "开始解码...");
+            updateDebugInfo("解码模态框已显示");
+            
+            // 模拟一个短暂的延迟，让用户看到模态框
+            setTimeout(() => {
+                updateDecodeProgress(10, "正在验证编码格式...");
+                setTimeout(() => {
+                    updateDecodeProgress(30, "正在加载编码表...");
+                    setTimeout(() => {
+                        updateDecodeProgress(50, "正在解码文本...");
+                        // 开始真正的解码
+                        decodeText(encodedText);
+                    }, 300);
+                }, 200);
+            }, 300);
+        }
+
+        // 隐藏解码模态框
+        function hideDecodeModal() {
+            const modal = document.getElementById('decodeModal');
+            
+            // 添加淡出动画
+            modal.style.animation = 'fadeIn 0.3s ease reverse';
+            
+            setTimeout(() => {
+                modal.style.display = 'none';
+                modal.style.animation = 'fadeIn 0.3s ease';
+                
+                // 重置模态框内容
+                document.getElementById('modalIcon').textContent = "🔄";
+                document.getElementById('modalTitle').textContent = "解码中...";
+                document.getElementById('modalTitle').style.color = "var(--primary)";
+                document.getElementById('modalMessage').textContent = "正在处理您的解码请求，请稍候...";
+                updateDecodeProgress(0, "");
+            }, 300);
+        }
+
+        // 解码文本函数
+        function decodeText(encodedText) {
+            try {
+                addLog("\n🔍 开始解码过程...", 'step');
+                addLog(`📊 输入编码长度: ${encodedText.length} 位`, 'data');
+                addLog(`📊 编码表大小: ${huffman.reverseCodes.size} 个编码`, 'data');
+                updateDebugInfo(`解码中... 编码长度: ${encodedText.length}位`);
+                
+                if (encodedText.length > 1000) {
+                    addLog(`📁 编码较长，可能需要一些时间处理...`, 'info');
+                }
+                
+                // 解码文本
+                updateDecodeProgress(60, "正在解码文本...");
+                
+                // 模拟解码过程的进度更新
+                let simulateProgress = 60;
+                const totalBits = encodedText.length;
+                const progressInterval = setInterval(() => {
+                    if (simulateProgress < 90) {
+                        simulateProgress += 2;
+                        updateDecodeProgress(simulateProgress, `解码中... ${simulateProgress}%`);
+                    } else {
+                        clearInterval(progressInterval);
+                    }
+                }, 50);
+                
+                // 实际解码
+                setTimeout(() => {
+                    const result = huffman.decodeText(encodedText);
+                    clearInterval(progressInterval);
+                    
+                    // 显示成功状态
+                    updateDecodeProgress(100, "解码完成！");
+                    document.getElementById('modalIcon').textContent = "✅";
+                    document.getElementById('modalTitle').textContent = "解码成功";
+                    document.getElementById('modalTitle').style.color = "var(--success)";
+                    
+                    // 延迟1.5秒后隐藏模态框
+                    setTimeout(() => {
+                        hideDecodeModal();
+                        handleDecodeResult(result, encodedText);
+                    }, 1500);
+                    
+                }, Math.max(800, encodedText.length * 0.1)); // 根据编码长度调整延迟
+                
+            } catch (error) {
+                // 显示错误状态
+                updateDecodeProgress(100, "解码失败！");
+                document.getElementById('modalIcon').textContent = "❌";
+                document.getElementById('modalTitle').textContent = "解码失败";
+                document.getElementById('modalTitle').style.color = "var(--danger)";
+                
+                // 延迟2秒后隐藏模态框
+                setTimeout(() => {
+                    hideDecodeModal();
+                    handleDecodeError(error);
+                }, 2000);
+            }
+        }
+
+        // 处理解码结果的函数
+        function handleDecodeResult(result, encodedText) {
+            // 记录解码结果
+            currentDecodedText = result.text;
+            
+            addLog(`✅ 解码完成！`, 'success');
+            addLog(`📄 解码字符数: ${result.charCount} 个`, 'data');
+            addLog(`🔢 处理位数: ${result.totalBits} 位`, 'data');
+            updateDebugInfo(`解码完成: ${result.charCount}字符`);
+            
+            if (result.remainingCode) {
+                addLog(`⚠️ 警告：有未处理的编码: ${result.remainingCode}`, 'warning');
+            }
+            
+            // 显示完整解码结果
+            displayDecodedResult(result);
+            
+            // 更新输入框
+            document.getElementById('inputText').value = result.text;
+            document.getElementById('originalTextDisplay').textContent = result.text;
+            
+            // 验证解码结果
+            if (currentOriginalText && result.text === currentOriginalText) {
+                addLog("🎉 完美！解码结果与原始文本完全一致！", 'success');
+            } else if (!currentOriginalText) {
+                addLog("💡 已使用解码结果作为当前文本", 'info');
+                currentOriginalText = result.text;
+            } else {
+                addLog("⚠️ 注意：解码结果与之前的原始文本不一致", 'info');
+                addLog("💡 已使用解码结果更新当前文本", 'info');
+                currentOriginalText = result.text;
+            }
+            
+            // 自动切换到解码结果标签页
+            switchTab('decoded');
+        }
+
+        // 处理解码错误的函数
+        function handleDecodeError(error) {
+            addLog(`❌ 解码过程中发生错误: ${error.message}`, 'warning');
+            updateDebugInfo(`解码失败: ${error.message}`);
+            
+            if (error.message.includes("编码表为空")) {
+                addLog("💡 提示：请先进行编码操作生成编码表，或确保编码表已加载", 'info');
+            }
+        }
+
+        // 直接译码函数（从输入框读取）
+        function decodeFromInput() {
+            const encodedText = document.getElementById('encodedText').value.trim();
+            
+            if (!encodedText) {
+                addLog("❌ 错误：编码字符串不能为空！", 'warning');
+                updateDebugInfo("编码字符串为空");
+                return;
+            }
+            
+            // 验证编码字符串
+            if (!/^[01]+$/.test(encodedText)) {
+                addLog("❌ 错误：编码字符串只能包含0和1！", 'warning');
+                updateDebugInfo("编码格式错误");
+                return;
+            }
+            
+            try {
+                addLog("\n🔍 开始直接译码...", 'step');
+                updateDebugInfo("开始直接译码");
+                
+                // 使用现有编码表译码
+                const decodedText = huffman.decodeDirect(encodedText);
+                
+                if (decodedText) {
+                    document.getElementById('inputText').value = decodedText;
+                    addLog("✅ 译码完成！已更新到左侧输入框", 'success');
+                    updateDebugInfo("译码完成");
+                } else {
+                    addLog("❌ 译码失败，编码表可能不匹配", 'warning');
+                    updateDebugInfo("译码失败");
+                }
+                
+            } catch (error) {
+                addLog(`❌ 译码过程中发生错误: ${error.message}`, 'warning');
+                updateDebugInfo(`译码失败: ${error.message}`);
+            }
+        }
+
+        // 编码+译码函数
+        function encodeAndDecode() {
+            const inputText = document.getElementById('inputText').value.trim();
+            
+            if (!inputText) {
+                addLog("❌ 错误：输入文本不能为空！", 'warning');
+                updateDebugInfo("输入文本为空");
+                return;
+            }
+            
+            try {
+                // 先编码
+                encodeText();
+                
+                // 然后自动解码
+                setTimeout(() => {
+                    const encodedText = document.getElementById('encodedText').value;
+                    if (encodedText) {
+                        addLog("\n🔄 自动进行译码验证...", 'step');
+                        decodeFromInput();
+                    }
+                }, 500);
+                
+            } catch (error) {
+                addLog(`❌ 编码+译码过程中发生错误: ${error.message}`, 'warning');
+                updateDebugInfo(`编码+译码失败: ${error.message}`);
+            }
+        }
+
+        // 显示解码结果
+        function displayDecodedResult(result) {
+            const decodedDisplay = document.getElementById('decodedResultDisplay');
+            const statsDisplay = document.getElementById('decodeStats');
+            
+            // 显示解码文本
+            if (result.text) {
+                decodedDisplay.textContent = result.text;
+                
+                // 更新统计信息
+                let stats = `🔢 解码统计:\n`;
+                stats += `   字符数量: ${result.charCount} 个\n`;
+                stats += `   处理位数: ${result.totalBits} 位\n`;
+                stats += `   平均位/字符: ${(result.totalBits / result.charCount).toFixed(2)}\n`;
+                
+                if (result.remainingCode) {
+                    stats += `\n⚠️ 未处理编码: ${result.remainingCode}`;
+                }
+                
+                statsDisplay.textContent = stats;
+                
+                // 显示成功消息
+                addLog("📄 完整解码结果已显示在'解码结果'标签页", 'info');
+            } else {
+                decodedDisplay.textContent = "解码失败，未得到有效结果。";
+                statsDisplay.textContent = "解码失败。";
+            }
+        }
+
+        // 复制解码结果
+        function copyDecodedResult() {
+            const text = currentDecodedText;
+            if (!text) {
+                addLog("❌ 没有可复制的解码结果", 'warning');
+                return;
+            }
+            
+            navigator.clipboard.writeText(text).then(() => {
+                const copyBtn = document.querySelector('.copy-btn');
+                const originalText = copyBtn.innerHTML;
+                copyBtn.innerHTML = '<span>✓</span> 已复制';
+                copyBtn.classList.add('success');
+                
+                addLog("✅ 解码结果已复制到剪贴板", 'success');
+                
+                setTimeout(() => {
+                    copyBtn.innerHTML = originalText;
+                    copyBtn.classList.remove('success');
+                }, 2000);
+            }).catch(err => {
+                addLog(`❌ 复制失败: ${err.message}`, 'warning');
+            });
+        }
+
         // 编码文本函数
         function encodeText() {
             const inputText = document.getElementById('inputText').value.trim();
             
             if (!inputText) {
                 addLog("❌ 错误：输入文本不能为空！", 'warning');
+                updateDebugInfo("输入文本为空");
                 return;
             }
             
@@ -726,6 +1314,7 @@
                 // 清空日志
                 logMessages = [];
                 addLog("🚀 开始编码过程...", 'step');
+                updateDebugInfo("开始编码...");
                 
                 // 步骤1: 构建频率字典
                 addLog("🎯 步骤1: 构建频率字典...", 'step');
@@ -773,7 +1362,11 @@
                 for (let i = 0; i < inputText.length; i++) {
                     const char = inputText[i];
                     const code = huffman.codes.get(char);
-                    currentEncodedText += code;
+                    if (code) {
+                        currentEncodedText += code;
+                    } else {
+                        throw new Error(`字符 '${char}' 没有对应的编码`);
+                    }
                     
                     if (i < 3) {  // 显示前3个字符的编码过程
                         const charPreview = formatCharDisplay(char);
@@ -818,61 +1411,11 @@
                     }
                 }
                 
+                updateDebugInfo(`编码完成: ${encodedBits}位`);
+                
             } catch (error) {
                 addLog(`❌ 编码过程中发生错误: ${error.message}`, 'warning');
-            }
-        }
-
-        // 解码文本函数
-        function decodeText() {
-            const encodedText = document.getElementById('encodedText').value.trim();
-            
-            if (!encodedText) {
-                addLog("❌ 错误：编码字符串不能为空！", 'warning');
-                return;
-            }
-            
-            // 验证编码字符串
-            if (!/^[01]+$/.test(encodedText)) {
-                addLog("❌ 错误：编码字符串只能包含0和1！", 'warning');
-                return;
-            }
-            
-            try {
-                addLog("\n🔍 开始解码过程...", 'step');
-                addLog(`编码字符串长度: ${encodedText.length} 位`, 'data');
-                addLog(`编码字符串预览: ${encodedText.substring(0, 50)}${encodedText.length > 50 ? '...' : ''}`, 'data');
-                
-                // 解码文本
-                const decodedText = huffman.decodeText(encodedText);
-                
-                addLog("\n📄 解码结果:", 'data');
-                let preview = decodedText.substring(0, 10);
-                if (decodedText.length > 10) {
-                    preview += `...(共${decodedText.length}个字符)`;
-                }
-                addLog(`  ${preview}`, 'data');
-                
-                // 更新结果
-                document.getElementById('inputText').value = decodedText;
-                document.getElementById('originalTextDisplay').textContent = decodedText;
-                
-                addLog(`✅ 解码完成！共解码 ${decodedText.length} 个字符`, 'success');
-                
-                // 验证解码结果
-                if (currentOriginalText && decodedText === currentOriginalText) {
-                    addLog("🎉 完美！解码结果与原始文本完全一致！", 'success');
-                } else if (!currentOriginalText) {
-                    addLog("⚠️ 原始文本未知，已使用解码结果作为当前文本", 'info');
-                    currentOriginalText = decodedText;
-                } else {
-                    addLog("❌ 警告：解码结果与原始文本不一致！", 'warning');
-                    addLog("💡 已使用解码结果更新当前文本", 'info');
-                    currentOriginalText = decodedText;
-                }
-                
-            } catch (error) {
-                addLog(`❌ 解码过程中发生错误: ${error.message}`, 'warning');
+                updateDebugInfo(`编码失败: ${error.message}`);
             }
         }
 
@@ -880,6 +1423,7 @@
         function clearInput() {
             document.getElementById('inputText').value = '';
             addLog("🗑️ 已清空输入文本", 'info');
+            updateDebugInfo("已清空输入");
         }
 
         // 使用编码结果填充
@@ -887,8 +1431,10 @@
             if (currentEncodedText) {
                 document.getElementById('encodedText').value = currentEncodedText;
                 addLog("📁 已加载之前的编码结果", 'info');
+                updateDebugInfo("已加载编码结果");
             } else {
                 addLog("❌ 错误：没有可用的编码结果，请先进行编码", 'warning');
+                updateDebugInfo("无编码结果可用");
             }
         }
 
@@ -912,12 +1458,14 @@
             addLog("🎯 Huffman 编码/解码系统已初始化！", 'step');
             addLog("💡 功能说明：", 'info');
             addLog("  1. 在左侧输入文本，点击'开始编码'进行编码", 'info');
-            addLog("  2. 编码结果会自动显示在右侧输入框", 'info');
-            addLog("  3. 点击'开始解码'可以将编码转换回文本", 'info');
-            addLog("  4. 支持中英文字符、数字、特殊符号", 'info');
+            addLog("  2. 点击'编码+译码'可以自动验证编码结果", 'info');
+            addLog("  3. 在右侧输入编码，点击'开始解码'进行解码", 'info');
+            addLog("  4. 点击'直接译码'可以快速验证编码", 'info');
+            addLog("  5. 支持中英文字符、数字、特殊符号", 'info');
             
             // 设置示例文本
             document.getElementById('inputText').value = "Hello World! 你好，世界！\n这是一个Huffman编码示例。";
+            updateDebugInfo("就绪");
         });
     </script>
 </body>
